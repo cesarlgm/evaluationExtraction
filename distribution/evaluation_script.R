@@ -1,4 +1,3 @@
-#!/usr/bin/env r
 
 if (!require("tidyverse", quietly=TRUE)) install.packages("tidyverse",quiet=TRUE)
 if (!require("stringr", quietly=TRUE)) install.packages("stringr",quiet=TRUE)
@@ -41,6 +40,8 @@ do_empty_database <- function(n_pages){
     add_column(respondents="") %>%
     add_column(prof_rating="") %>%
     add_column(course_rating="") %>%
+    add_column(difficulty="")%>%
+    add_column(workload="")%>%
     add_column(concepts="") %>% 
     add_column(interest="") %>% 
     add_column(participation="") %>%
@@ -107,13 +108,15 @@ return_prompt <- function(column, page){
       "number of respondents"=column==5,
       "professor rating"=column==6,
       "course rating"=column==7,
-      "effectiveness in explaining concepts rating"=column==8,
-      "stimulate interest rating"=column==9,
-      "class partipation rating"=column==10,
-      "fairness in grading rating"=column==11,
-      "returning assignments rating"=column==12,
-      "quality of feedback rating"=column==13,
-      "availability outside class rating"=column==14
+      "difficulty rating"=column==8,
+      "workload rating"=column==9,
+      "effectiveness in explaining concepts rating"=column==10,
+      "stimulate interest rating"=column==11,
+      "class partipation rating"=column==12,
+      "fairness in grading rating"=column==13,
+      "returning assignments rating"=column==14,
+      "quality of feedback rating"=column==15,
+      "availability outside class rating"=column==16
     )
   )
   prompt <- paste("Please input the", prompt_b,"in page",page,">",sep=" ")
@@ -177,7 +180,7 @@ clean_output_database <- function(database) {
     mutate_all(toupper)
 
   #destringing numbers
-  output_database[,6:14] <- output_database[,6:14]%>%
+  output_database[,6:16] <- output_database[,6:16]%>%
     mutate_all(destring)
 
   #destringing the respondents
@@ -191,7 +194,7 @@ clean_output_database <- function(database) {
   #making zero responses NA
   output_database$respondents <- ifelse(output_database$respondents==0,NA,output_database$respondents)
 
-  output_database[,6:14] <- output_database[,6:14]%>%
+  output_database[,6:16] <- output_database[,6:16]%>%
     mutate_all(funs(ifelse(.>100,./100,.)))%>%
     mutate_all(funs(ifelse(.>10,./10,.)))
 
@@ -218,7 +221,7 @@ clean_output_database <- function(database) {
       
     mistake_matrix <- output_database
     mistake_matrix[,] <- FALSE
-    mistake_matrix[,6:14] <- output_database[,6:14]%>%
+    mistake_matrix[,6:16] <- output_database[,6:16]%>%
       mutate_all(funs(ifelse(.>5,TRUE,FALSE)))
   
   
@@ -282,10 +285,16 @@ extract_page_text <- function(page, file,semester_to_scan, database, pdf_text){
     course_rating <- extract_data_point("course rating",page_lines,number_type = "end")
     database$course_rating[page] <- course_rating
 
+    difficulty <- extract_data_point("difficulty",page_lines,number_type = "end")
+    database$difficulty[page] <- difficulty
+    
+    workload <- extract_data_point("workload",page_lines,number_type = "end")
+    database$workload[page] <- workload
+    
     concepts <- extract_data_point("concepts",page_lines,number_type = "end")
     database$concepts[page] <- course_rating
 
-    interest <- extract_data_point("subject",page_lines,number_type = "end")
+    interest <- extract_data_point("subject|nterest",page_lines,number_type = "end")
     database$interest[page] <- course_rating
 
     respondents <- extract_data_point("course rating",page_lines,number_type = "respondents")
